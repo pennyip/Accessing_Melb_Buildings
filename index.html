@@ -85,7 +85,7 @@
 }
 
 .sidebar-text {
-  font-size: 12px;
+  font-size: 11px;
   margin-bottom: 10px;
   font-family: "Montserrat", sans-serif;
 }
@@ -639,66 +639,40 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
 
 
       map.on('click', function(e) {
-        // clears previous highlighted points
-        clearPreviousHighlights();
+  // clears previous highlighted points
+  clearPreviousHighlights();
 
-        // this checks if the click is on a building point or hexbin, to not have 2 popups happen when clicking a hexbin or building points
-        var featuresBuilding = map.queryRenderedFeatures(e.point, {
-          layers: ['building-points']
-        });
-        var featuresHexbin = map.queryRenderedFeatures(e.point, {
-          layers: ['hexbin-extrusion']
-        });
+  // this checks if the click is on a building point or hexbin, to not have 2 popups happen when clicking a hexbin or building points
+  var featuresBuilding = map.queryRenderedFeatures(e.point, {
+    layers: ['building-points']
+  });
+  var featuresHexbin = map.queryRenderedFeatures(e.point, {
+    layers: ['hexbin-extrusion']
+  });
 
-        // for the nearest point highlight caluclations
-        var nearestTaxiRank = findNearestFeature(e.lngLat, taxiRanksData);
-        var nearestBusStop = findNearestFeature(e.lngLat, busStopsData);
-        var nearestTrainStation = findNearestFeature(e.lngLat, trainStationsData);
+  // for the nearest point highlight calculations
+  var nearestTaxiRank = findNearestFeature(e.lngLat, taxiRanksData);
+  var nearestBusStop = findNearestFeature(e.lngLat, busStopsData);
+  var nearestTrainStation = findNearestFeature(e.lngLat, trainStationsData);
 
-        var nearestBuildingPoint = null;
-        if (featuresBuilding.length) {
-          nearestBuildingPoint = featuresBuilding[0];
-        }
+  var nearestBuildingPoint = null;
+  if (featuresBuilding.length) {
+    nearestBuildingPoint = featuresBuilding[0];
+  }
 
-        var popupContent = '';
+  // Clear previous highlights and add new highlights
+  clearPreviousHighlights();
+  if (nearestTaxiRank) {
+    highlightNearestPoint(nearestTaxiRank, '#FFDF75');
+  }
+  if (nearestBusStop) {
+    highlightNearestPoint(nearestBusStop, '#F3819A');
+  }
+  if (nearestTrainStation) {
+    highlightNearestPoint(nearestTrainStation, '#90A35C');
+  }
+});
 
-        if (nearestTaxiRank) {
-          var taxiDistance = nearestTaxiRank.properties.distance;
-          var taxiRankLocation = nearestTaxiRank.properties.loc_desc; // Retrieve the location description
-          highlightNearestPoint(nearestTaxiRank, '#FFDF75');
-          popupContent += 'Nearest Taxi Rank: ' + Math.round(taxiDistance) + ' meters<br>';
-          popupContent += 'Rank Location: ' + taxiRankLocation + '<br>'; // Add the location description to the popup
-        } else {
-          popupContent += 'No taxi ranks nearby<br>';
-        }
-
-        if (nearestBusStop) {
-          var busDistance = nearestBusStop.properties.distance;
-          highlightNearestPoint(nearestBusStop, '#F3819A');
-          popupContent += 'Nearest Bus Stop: ' + Math.round(busDistance) + ' meters<br>';
-        } else {
-          popupContent += 'No bus stops nearby<br>';
-        }
-
-        if (nearestTrainStation) {
-          var trainDistance = nearestTrainStation.properties.distance;
-          var trainStationName = nearestTrainStation.properties.station; // Retrieve the station name
-          highlightNearestPoint(nearestTrainStation, '#90A35C');
-          popupContent += 'Nearest Train Station : ' + Math.round(trainDistance) + ' meters<br>';
-          popupContent += 'Station: ' + trainStationName + '<br>'; // Add the station name to the popup
-        } else {
-          popupContent += 'No train stations nearby<br>';
-        }
-
-
-
-        new mapboxgl.Popup({
-            className: 'closest-distance-popup'
-          })
-          .setLngLat(e.lngLat)
-          .setHTML(popupContent)
-          .addTo(map);
-      });
 
       // cursor change
       map.on('mouseenter', 'building-points', function() {
@@ -900,11 +874,10 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
     //control button
     map.addControl(new mapboxgl.NavigationControl(), 'top-left');
   });
-
 // Variables to store GeoJSON data for the sources
 let taxiRanksData, busStopsData, trainStationsData;
 
-// fetch and store the data for each layer: taxi ranks, bus stops, train station. The highlight function didn't work when using vector tiles instead of geojson
+// Fetch and store the data for each layer: taxi ranks, bus stops, train station.
 fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/taxi-ranks.geojson')
   .then(response => response.json())
   .then(data => {
@@ -923,7 +896,7 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/met
     trainStationsData = data;
   });
 
-// this section is for the nearest point popup function. Again, this uses Turf.js function to calculate distance from the point
+// Function to find the nearest feature and calculate distance
 function findNearestFeature(clickedPoint, geojsonData) {
   if (!geojsonData) return null;
 
@@ -945,14 +918,36 @@ function findNearestFeature(clickedPoint, geojsonData) {
   return nearestFeature;
 }
 
-// now that the function has been calculated, this highlight function can highlight which points the popup is referring to.
+// Highlight the nearest point and include distance in the text
 function highlightNearestPoint(feature, color) {
   var id = 'highlight-' + Math.random().toString(36).substr(2, 9);
+
+  // Determine the text based on the feature type
+  var text = '';
+  if (feature.properties.station) {
+    text = feature.properties.station.trim();
+
+    // Ensure the text ends with "Station"
+    if (!text.toLowerCase().endsWith('station')) {
+      text += ' Station';
+    }
+  } else if (feature.properties.loc_desc) {
+    text = feature.properties.loc_desc.trim(); // Display the 'loc_desc' property for taxi ranks
+  } else {
+    text = 'Bus Stop'; // Default text for bus stops
+  }
+
+  // Include distance in meters below the text
+  if (feature.properties.distance !== undefined) {
+    text += `\nDistance: ${Math.round(feature.properties.distance)} meters`;
+  }
+
+  // Add the circle layer for highlighting
   map.addLayer({
     id: id,
     type: 'circle',
     source: {
-      type: 'geojson', // required geojson to work properly
+      type: 'geojson',
       data: feature
     },
     paint: {
@@ -964,25 +959,45 @@ function highlightNearestPoint(feature, color) {
         ['linear'],
         ['zoom'],
         14, 6,
-        22, 14, // made it larger than the exisiting building circles
+        22, 14
       ],
-      'circle-pitch-alignment': 'map' // this aligns the circles flat on the map
+      'circle-pitch-alignment': 'map'
     }
   });
 
-  // stores the layer id for later removal
-  highlightedLayers.push(id);
-
-  // removes the highlight after 4 seconds
-  setTimeout(() => {
-    map.removeLayer(id);
-    var index = highlightedLayers.indexOf(id);
-    if (index !== -1) {
-      highlightedLayers.splice(index, 1);
+  // Add the symbol layer for the text
+  var textId = id + '-text';
+  map.addLayer({
+    id: textId,
+    type: 'symbol',
+    source: {
+      type: 'geojson',
+      data: feature
+    },
+    layout: {
+      'text-field': text,  // Display the appropriate text with distance
+      'text-size': 9,
+      'text-offset': [0, 3], // Position the text above the circle
+    },
+    paint: {
+      'text-color': 'white', // Set the text color
     }
-  }, 4000); // this is the equivalent to 4 seconds
+  });
+
+  // Remove both layers when the highlight needs to disappear
+  setTimeout(function() {
+    if (map.getLayer(id)) {
+      map.removeLayer(id);
+      map.removeSource(id);
+    }
+    if (map.getLayer(textId)) {
+      map.removeLayer(textId);
+      map.removeSource(textId);
+    }
+  }, 5000); // Adjust the timeout as needed
 }
 
+// Clear previous highlights
 function clearPreviousHighlights() {
   highlightedLayers.forEach(function(id) {
     if (map.getLayer(id)) {
