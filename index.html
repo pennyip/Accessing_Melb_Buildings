@@ -1030,30 +1030,12 @@ function updateButtonText() {
 // Initialize button text based on the initial view mode
 updateButtonText();
 
-// Event listener for the toggle button
-toggleButton.addEventListener('click', () => {
-  const is3D = map.getPitch() > 0;
-  if (is3D) {
-    // Switch to 2D view
-    map.easeTo({
-      pitch: 0,
-      bearing: 0,
-      duration: 500
-    });
-  } else {
-    // Switch to 3D view
-    map.easeTo({
-      pitch: 60, // Adjust pitch for 3D effect
-      bearing: 30, // Adjust bearing for 3D effect
-      duration: 500
-    });
-  }
-  // Update button text after switching views
-  updateButtonText();
-});
 
 let currentPopup = null;
 let popupTimeout = null;
+
+// Mapbox Geocoding API token
+const mapboxToken = 'pk.eyJ1IjoiczQwMTY2OTgiLCJhIjoiY2x0b3lyMDcyMGtzcTJrcGFlN3ZzNnRtZyJ9.oc1p4S7lER0OXK8G6q1w8Q'; // Replace with your Mapbox API token
 
 // Function to create a popup
 function createPopup(coordinates, html) {
@@ -1078,16 +1060,35 @@ function createPopup(coordinates, html) {
     }, 8000);
 }
 
+// Function to get address using Mapbox Geocoding API
+async function getAddress(coordinates) {
+    const [lng, lat] = coordinates;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${lng},${lat}.json?access_token=${mapboxToken}`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        const address = data.features[0]?.place_name || 'Address not found';
+        return address;
+    } catch (error) {
+        console.error('Error fetching address:', error);
+        return 'Address not available';
+    }
+}
+
 // Add hover interactions for train stations
 map.on('mouseenter', 'train-stations', (e) => {
     map.getCanvas().style.cursor = 'pointer';
     const coordinates = e.features[0].geometry.coordinates.slice();
     const description = e.features[0].properties.station;
-    createPopup(coordinates, `<strong>Station:</strong> ${description}`);
+    createPopup(coordinates, `<strong>Train Station:</strong> ${description}`);
 });
 
 map.on('mouseleave', 'train-stations', () => {
     map.getCanvas().style.cursor = '';
+    if (currentPopup) {
+        currentPopup.remove();
+    }
 });
 
 // Add hover interactions for taxi ranks
@@ -1095,13 +1096,30 @@ map.on('mouseenter', 'taxi-ranks', (e) => {
     map.getCanvas().style.cursor = 'pointer';
     const coordinates = e.features[0].geometry.coordinates.slice();
     const description = e.features[0].properties.loc_desc;
-    createPopup(coordinates, `<strong>Location Description:</strong> ${description}`);
+    createPopup(coordinates, `<strong>Taxi Rank Location:</strong> ${description}`);
 });
 
 map.on('mouseleave', 'taxi-ranks', () => {
     map.getCanvas().style.cursor = '';
+    if (currentPopup) {
+        currentPopup.remove();
+    }
 });
 
+// Add hover interactions for bus stops
+map.on('mouseenter', 'bus-stops', async (e) => {
+    map.getCanvas().style.cursor = 'pointer';
+    const coordinates = e.features[0].geometry.coordinates.slice();
+    const address = await getAddress(coordinates);
+    createPopup(coordinates, `<strong>Bus Stop Address:</strong> ${address}`);
+});
+
+map.on('mouseleave', 'bus-stops', () => {
+    map.getCanvas().style.cursor = '';
+    if (currentPopup) {
+        currentPopup.remove();
+    }
+});
     
 </script>
 </body>
