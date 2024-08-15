@@ -387,37 +387,29 @@ a.legend-button.active:hover {
 //my mapbox unique access code
 mapboxgl.accessToken = 'pk.eyJ1IjoiczQwMTY2OTgiLCJhIjoiY2x0b3lyMDcyMGtzcTJrcGFlN3ZzNnRtZyJ9.oc1p4S7lER0OXK8G6q1w8Q';
 
-//setting the max bounds of the map. Leaving slightly wider than the dataset so that context can be given to user
 var bounds = [
   [144.838858, -37.870314],
   [145.094719, -37.766712]
 ];
 
-
-//adding the variable of the map container. 
 var map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/s4016698/clvx9dv6h014i01rde4y6a4fo',
   maxBounds: bounds,
   zoom: 12.5,
   center: [144.956310, -37.827197],
-  bearing: 35.20, //adjusting this will change the direction the view is facing
-  pitch: 56.50 // adjusting this will change how up it is facing. Leaving this up slightly so the extrusions can be seen by default
+  bearing: 35.20,
+  pitch: 56.50
 });
 
-
-//creating the variable for the accessibility rating layer.
 var accessNames = ['0', '1', '2', '3'];
-var circleColors = ['#a8eec7', '#6dbab9', '#5481a0', '#413D66']; //graduated colour scheme
+var circleColors = ['#a8eec7', '#6dbab9', '#5481a0', '#413D66'];
 
-//bringing the geojson in becasue mapbox tiles don't work for the hexbins or extrusions function
 fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off_street_final.geojson')
   .then(response => response.json())
   .then(data => {
     map.on('load', function() {
 
-
-      /// delete if it doesn't work
       var geocoder = new MapboxGeocoder({
         accessToken: mapboxgl.accessToken,
         mapboxgl: mapboxgl,
@@ -429,10 +421,8 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         }
       });
 
-      // Append the geocoder to an existing HTML element or add it to the map
       document.getElementById('your-searchbar-container').appendChild(geocoder.onAdd(map));
 
-      // Optional: Move the map to the selected location
       geocoder.on('result', function(e) {
         map.flyTo({
           center: e.result.geometry.coordinates,
@@ -440,38 +430,46 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         });
       });
 
-
-
       var bbox = turf.bbox(data);
-      var cellSize = 0.08; //this is in kilometers as described below. Any smaller makes the map load super slowly. Any larger and there isn't much definition in the data being displayed.
+      var cellSize = 0.08;
 
-      //using turf to create a hexgrid. The hexgrid will then be combined with the points within polygon to spatially join the data to hexgrid.
       var hexGrid = turf.hexGrid(bbox, cellSize, {
         units: 'kilometers'
       });
 
-      //this section will create the points within
       hexGrid.features = hexGrid.features.map(hex => {
-        hex.properties.parkingSpaces = 0;
-        hex.properties.accessibilityRating = '0';
         var pointsWithin = turf.pointsWithinPolygon(data, hex).features;
+        var parkingSpacesByRating = {
+          '0': 0,
+          '1': 0,
+          '2': 0,
+          '3': 0
+        };
 
         if (pointsWithin.length > 0) {
           pointsWithin.forEach(point => {
-            hex.properties.parkingSpaces += point.properties['off_street_FeatureToPoin.MAX_Parking_spaces'];
+            var rating = point.properties['buildings_info_FeatureToPoin.MAX_Accessibility_rating'];
+            var spaces = point.properties['off_street_FeatureToPoin.MAX_Parking_spaces'];
+            if (rating in parkingSpacesByRating) {
+              parkingSpacesByRating[rating] += spaces;
+            }
           });
 
-          hex.properties.accessibilityRating = pointsWithin[0].properties['buildings_info_FeatureToPoin.MAX_Accessibility_rating'];
+          // Determine the accessibility rating with the most parking spaces
+          var maxRating = Object.keys(parkingSpacesByRating).reduce((a, b) => {
+            return parkingSpacesByRating[a] > parkingSpacesByRating[b] ? a : b;
+          });
+
+          hex.properties.parkingSpaces = Object.values(parkingSpacesByRating).reduce((a, b) => a + b, 0);
+          hex.properties.accessibilityRating = maxRating;
         }
 
-        return hex; // so hexbins only exist if there is data within the hexbin
+        return hex;
       }).filter(hex => hex.properties.parkingSpaces > 0);
 
-
-      //
       map.addSource('parking-data', {
         type: 'geojson',
-        data: data //referring to data created by in turf bbox
+        data: data
       });
 
       map.addSource('hexbin', {
@@ -479,12 +477,11 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         data: hexGrid
       });
 
-      //layer creating hexbin extrusion
       map.addLayer({
         id: 'hexbin-extrusion',
         type: 'fill-extrusion',
-        source: 'hexbin', //referring to hexbin layer created with turf
-        minzoom: 0, //set so that the hexbins are visible on small scale and disappear when zooming in to 14
+        source: 'hexbin',
+        minzoom: 0,
         maxzoom: 14,
         paint: {
           'fill-extrusion-color': [
@@ -497,7 +494,7 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
             '#d3d3d3'
           ],
           'fill-extrusion-height': [
-            'step', // step chosen so that there is some similiarities in heights as opposed to interpolation
+            'step',
             ['get', 'parkingSpaces'],
             0,
             50, 100,
@@ -508,30 +505,26 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
             3000, 1000,
             4000, 1200,
             5000, 1400,
-            6000, 1600 //max 6000 car spaces
-            // could alter this section to make more sense in terms of steps
+            6000, 1600
           ],
-          'fill-extrusion-opacity': 0.8, //needing slightly opaque to view what's behind
-          'fill-extrusion-base': 0 // set as 0 to have the base on the map
+          'fill-extrusion-opacity': 0.8,
+          'fill-extrusion-base': 0
         }
       });
 
-
-      // Add a hexbin outline layer that remains visible after zooming in
       map.addLayer({
         id: 'hexbin-outline',
         type: 'line',
         source: 'hexbin',
-        minzoom: 14, // outline appears when the hexbin extrusions disappear
-        maxzoom: 22, // adjust according to how long you want the outlines to be visible
+        minzoom: 14,
+        maxzoom: 22,
         paint: {
-          'line-color': 'white', // white outline color
-          'line-width': 1, // adjust the width of the outline
-          'line-opacity': 0.1 // adjust the opacity if needed
+          'line-color': 'white',
+          'line-width': 1,
+          'line-opacity': 0.1
         }
       });
 
-      //popup function for the hexbin extrusion layer
       map.on('click', 'hexbin-extrusion', function(e) {
         var features = e.features;
         if (!features || features.length === 0) {
@@ -542,27 +535,22 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         var properties = feature.properties;
         console.log('Feature Properties:', properties);
 
-        //using these variables for the popup content
         var parkingSpaces = properties.parkingSpaces;
         var accessibilityRating = properties.accessibilityRating;
         var buildingCount = turf.pointsWithinPolygon(data, feature.geometry).features.length;
         var popupContent =
-          'Average Accessibility Rating: ' + accessibilityRating + '<br>' +
-          'Off-Street Parking Spaces: ' + parkingSpaces + '<br>' +
-          'Building Count: ' + buildingCount; // important to know so that the viewer can make judgement of how dense the hexbin is
+          'Most Common Accessibility Rating: ' + accessibilityRating + '<br>' +
+          'Total Off-Street Parking Spaces: ' + parkingSpaces + '<br>' +
+          'Building Count: ' + buildingCount;
 
-        //to refer to the css style
         new mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(popupContent)
           .addTo(map);
 
-        // prevent popups for nearest points from showing up
         e.stopPropagation();
       });
 
-
-      //change cursor when hovering
       map.on('mouseenter', 'hexbin-extrusion', function() {
         map.getCanvas().style.cursor = 'pointer';
       });
@@ -571,18 +559,16 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         map.getCanvas().style.cursor = '';
       });
 
-      // add this block using the GeoJSON data directly
       map.addSource('building-points-source', {
         type: 'geojson',
         data: 'https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off_street_final.geojson'
       });
 
-      // adding the building points layer
       map.addLayer({
         id: 'building-points',
         type: 'circle',
         source: 'building-points-source',
-        minzoom: 14, // points are shown at large scale
+        minzoom: 14,
         maxzoom: 22,
         paint: {
           'circle-color': [
@@ -599,16 +585,15 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
             ['linear'],
             ['zoom'],
             14, 3,
-            22, 10, // this allows the circles to get larger as we zoom in
+            22, 10,
           ],
-          'circle-pitch-alignment': 'map' //this aligns the circles flat on the map
+          'circle-pitch-alignment': 'map'
         },
         layout: {
-          'visibility': 'visible' // make the layer visible by default
+          'visibility': 'visible'
         }
       });
 
-      //popup for the building points
       map.on('click', 'building-points', function(e) {
         var features = e.features;
         if (!features || features.length === 0) {
@@ -619,7 +604,6 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         var properties = feature.properties;
         console.log('Feature Properties:', properties);
 
-        // Using these variables for the popup content
         var parkingSpaces = properties['off_street_FeatureToPoin.MAX_Parking_spaces'];
         var accessibilityRating = properties['buildings_info_FeatureToPoin.MAX_Accessibility_rating'];
         var buildingType = properties['off_street_FeatureToPoin.LAST_Parking_type'];
@@ -633,11 +617,9 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
           .setHTML(popupContent)
           .addTo(map);
 
-        // prevent popups for nearest points from showing up
         e.stopPropagation();
       });
-
-
+        
       map.on('click', function(e) {
   // clears previous highlighted points
   clearPreviousHighlights();
