@@ -539,7 +539,7 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
         var accessibilityRating = properties.accessibilityRating;
         var buildingCount = turf.pointsWithinPolygon(data, feature.geometry).features.length;
         var popupContent =
-          'Most Common Accessibility Rating: ' + accessibilityRating + '<br>' +
+          'Average Accessibility Rating: ' + accessibilityRating + '<br>' +
           'Total Off-Street Parking Spaces: ' + parkingSpaces + '<br>' +
           'Building Count: ' + buildingCount;
 
