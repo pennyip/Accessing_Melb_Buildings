@@ -1,0 +1,350 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Varela&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Varela&display=swap');
+
+#map {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+}
+
+/* grey bar on the left which everything will sit in */
+#sidebar {
+  position: fixed;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 180px;
+  background-color: darkgrey;
+  color: white;
+  padding: 15px;
+  z-index: 1;
+  overflow-y: auto;
+  overflow: visible;
+  transition: transform 0.3s ease;
+}
+
+#sidebar.collapsed {
+  transform: translateX(210px);
+}
+
+#toggle-sidebar {
+  position: fixed;
+  top: 12px;
+  /* Center vertically */
+  right: 195px;
+  transform: translate(-50%, -50%);
+  background-color: darkgrey;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  z-index: 2;
+  transition: left 0.3s ease;
+}
+
+#toggle-sidebar::before {
+  content: ">";
+}
+
+#toggle-sidebar.collapsed {
+  right: 0;
+}
+
+#toggle-sidebar.collapsed::before {
+  content: "<";
+}
+
+/* Sidebar content styles */
+.sidebar-content {
+  margin-top: 10px;
+}
+
+.sidebar-heading {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+  font-family: "Montserrat", sans-serif;
+}
+
+.sidebar-text {
+  font-size: 12px;
+  margin-bottom: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.credits {
+  font-size: 10px;
+  margin-bottom: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.divider {
+  height: 1px;
+  background-color: white;
+  margin: 10px 0;
+}
+
+.mapboxgl-popup {
+  max-width: 200px;
+  background-color: none;
+  opacity: 0.8;
+  font-family: "Montserrat", sans-serif;
+}
+
+.popup-content {
+  font-family: "Montserrat", sans-serif;
+  font-size: 14px;
+  padding: 10px;
+  background-color: #696969;
+  border-radius: 5px;
+  box-shadow: 10px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+}
+
+.popup-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.popup-description {
+  margin-bottom: 0;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Button styling */
+#button {
+  background: none;
+  border-radius: 3px;
+  width: 100%;
+  font-family: 'Varela', sans-serif;
+}
+
+#button a {
+  font-size: 13px;
+  color: #404040;
+  display: block;
+  margin: 5px;
+  padding: 10px;
+  text-decoration: none;
+  text-align: center;
+  background-color: #5e5e5e;
+  border-radius: 5px;
+}
+
+#button a:last-child {
+  border: none;
+}
+
+#button a:hover {
+  background-color: #f8f8f8;
+  color: #404040;
+}
+
+#button a.active {
+  background-color: #894b77;
+  color: white;
+  font-weight: normal;
+}
+
+#button a.active:hover {
+  color: #f8f8f8;
+}
+
+#legend-buttons h4 {
+  font-family: 'Varela', sans-serif;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+a.legend-button {
+  font-size: 11px;
+  color: #404040;
+  display: block;
+  margin: 5px;
+  padding: 10px;
+  text-decoration: none;
+  text-align: left;
+  background-color: #5e5e5e;
+  border-radius: 5px;
+  font-family: 'Varela', sans-serif;
+}
+
+a.legend-button:last-child {
+  border: none;
+}
+
+a.legend-button:hover {
+  background-color: #f8f8f8;
+  color: #404040;
+}
+
+a.legend-button.active {
+  background-color: #894b77;
+  color: white;
+  font-weight: normal;
+}
+
+a.legend-button.active:hover {
+  background-color: #f8f8f8;
+  color: #404040;
+}
+
+.public-transport {
+  font-family: 'Varela', sans-serif;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.heading-with-info {
+  display: flex;
+  text-align: center;
+  justify-content: center;
+  /* Center the container */
+  align-items: center;
+}
+
+.heading-with-info h5 {
+  margin: 0;
+  font-family: "Montserrat", sans-serif;
+  margin-right: 8px;
+  /* space between text and button */
+  font-size: 10px;
+  text-align: center;
+  font-weight: normal;
+}
+
+.info-button {
+  position: relative;
+  text-align: center;
+  width: 12px;
+  height: 12px;
+  background-color: #5e5e5e;
+  border-radius: 50%;
+  color: white;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.info-button::after {
+  content: 'The accessibility rating is an official rating used by the City of Melbourne and can be found on the "Building Information" open dataset. The levels are determined by certain variables such as steps, ramps and alternative entries.';
+  font-family: "Montserrat", sans-serif;
+  position: absolute;
+  top: 100%;
+  left: -100px;
+  transform: translateX(-50%);
+  width: 180px;
+  background-color: #5e5e5e;
+  color: white;
+  font-size: 12px;
+  line-height: 1.4;
+  border-radius: 5px;
+  padding: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  z-index: 20;
+}
+
+.info-button:hover::after {
+  opacity: 1;
+  visibility: visible;
+  z-index: 3;
+}
+
+#legend {
+  margin-bottom: 20px;
+}
+
+#height-legend {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.bar {
+  width: 20px;
+  background-color: grey;
+  margin: 0 2px;
+}
+
+.closest-distance-popup .mapboxgl-popup-content {
+  background-color: #06402b;
+  /* Change this to your desired color */
+  color: white;
+  /* Adjust the text color for readability */
+}
+
+#toggle-2d-3d {
+  position: absolute;
+  font-family: "Montserrat", sans-serif;
+  top: 100px;
+  left: 10px;
+  background-color: #fff;
+  border: none;
+  padding: 8px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  z-index: 1000;
+  font-weight: bold;
+  color: black;
+  transition: background-color 0.3s ease;
+}
+
+#toggle-2d-3d:hover {
+  background-color: #e0e0e0;
+}
+
+/* Button Styles */
+.button {
+  background-color: gray;
+  color: white;
+  border: none;
+  padding: 7px 10px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+/* Button Hover Effect */
+.button:hover {
+  background-color: lightgray;
+}
+
+/* Button Active Effect */
+.button:active {
+  background-color: darkgray;
+}
+
+.mapboxgl-ctrl-geocoder {
+  max-width: 400px;
+  max-height: 100px;
+ font-family: "Montserrat", sans-serif;
+ font-size: 10px;
+  position: absolute;
+  opacity: 90%;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+  padding: 5px;
+  
+}
