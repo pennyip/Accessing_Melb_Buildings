@@ -1052,43 +1052,56 @@ toggleButton.addEventListener('click', () => {
   updateButtonText();
 });
 
+let currentPopup = null;
+let popupTimeout = null;
+
+// Function to create a popup
+function createPopup(coordinates, html) {
+    // Clear the existing popup if there is one
+    if (currentPopup) {
+        currentPopup.remove();
+        clearTimeout(popupTimeout);
+    }
+
+    // Create a new popup
+    currentPopup = new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(html)
+        .addTo(map);
+
+    // Set a timeout to automatically remove the popup after 8 seconds
+    popupTimeout = setTimeout(() => {
+        if (currentPopup) {
+            currentPopup.remove();
+            currentPopup = null;
+        }
+    }, 8000);
+}
+
 // Add hover interactions for train stations
 map.on('mouseenter', 'train-stations', (e) => {
     map.getCanvas().style.cursor = 'pointer';
-
-    // Create a popup
     const coordinates = e.features[0].geometry.coordinates.slice();
     const description = e.features[0].properties.station;
-
-    new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>Station:</strong> ${description}`)
-        .addTo(map);
+    createPopup(coordinates, `<strong>Station:</strong> ${description}`);
 });
 
 map.on('mouseleave', 'train-stations', () => {
     map.getCanvas().style.cursor = '';
-    map.getPanes().popup.remove();
 });
 
 // Add hover interactions for taxi ranks
 map.on('mouseenter', 'taxi-ranks', (e) => {
     map.getCanvas().style.cursor = 'pointer';
-
-    // Create a popup
     const coordinates = e.features[0].geometry.coordinates.slice();
     const description = e.features[0].properties.loc_desc;
-
-    new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<strong>Location Description:</strong> ${description}`)
-        .addTo(map);
+    createPopup(coordinates, `<strong>Location Description:</strong> ${description}`);
 });
 
 map.on('mouseleave', 'taxi-ranks', () => {
     map.getCanvas().style.cursor = '';
-    map.getPanes().popup.remove();
 });
+
     
 </script>
 </body>
