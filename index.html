@@ -406,54 +406,73 @@ a.legend-button.active:hover {
 <div id='map'></div>
 <div id="your-searchbar-container"></div>
 <script>
+//my mapbox unique access code
 mapboxgl.accessToken = 'pk.eyJ1IjoiczQwMTY2OTgiLCJhIjoiY2x0b3lyMDcyMGtzcTJrcGFlN3ZzNnRtZyJ9.oc1p4S7lER0OXK8G6q1w8Q';
 
+//setting the max bounds of the map. Leaving slightly wider than the dataset so that context can be given to user
 var bounds = [
   [144.838858, -37.870314],
   [145.094719, -37.766712]
 ];
 
+
+//adding the variable of the map container. 
 var map = new mapboxgl.Map({
   container: 'map',
   style: 'mapbox://styles/s4016698/clvx9dv6h014i01rde4y6a4fo',
   maxBounds: bounds,
   zoom: 12.5,
   center: [144.956310, -37.827197],
-  bearing: 35.20,
-  pitch: 56.50
+  bearing: 35.20, //adjusting this will change the direction the view is facing
+  pitch: 56.50 // adjusting this will change how up it is facing. Leaving this up slightly so the extrusions can be seen by default
 });
 
-var accessNames = ['0', '1', '2', '3'];
-var circleColors = ['#a8eec7', '#6dbab9', '#5481a0', '#413D66']; 
 
+//creating the variable for the accessibility rating layer.
+var accessNames = ['0', '1', '2', '3'];
+var circleColors = ['#a8eec7', '#6dbab9', '#5481a0', '#413D66']; //graduated colour scheme
+
+//bringing the geojson in becasue mapbox tiles don't work for the hexbins or extrusions function
 fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off_street_final.geojson')
   .then(response => response.json())
   .then(data => {
     map.on('load', function() {
-    
-var geocoder = new MapboxGeocoder({
-accessToken: mapboxgl.accessToken,
-mapboxgl: mapboxgl,
-placeholder: 'Search for an address',
-bbox: [144.838858, -37.870314, 145.094719, -37.766712],
-proximity: { longitude: 144.956310, latitude: -37.827197 }
-});
 
-document.getElementById('your-searchbar-container').appendChild(geocoder.onAdd(map));
 
-geocoder.on('result', function(e) {
-    map.flyTo({
-      center: e.result.geometry.coordinates,
-      zoom: 14
-    });
-  });
-    
+      /// delete if it doesn't work
+      var geocoder = new MapboxGeocoder({
+        accessToken: mapboxgl.accessToken,
+        mapboxgl: mapboxgl,
+        placeholder: 'Search for an address',
+        bbox: [144.838858, -37.870314, 145.094719, -37.766712],
+        proximity: {
+          longitude: 144.956310,
+          latitude: -37.827197
+        }
+      });
+
+      // Append the geocoder to an existing HTML element or add it to the map
+      document.getElementById('your-searchbar-container').appendChild(geocoder.onAdd(map));
+
+      // Optional: Move the map to the selected location
+      geocoder.on('result', function(e) {
+        map.flyTo({
+          center: e.result.geometry.coordinates,
+          zoom: 14
+        });
+      });
+
+
+
       var bbox = turf.bbox(data);
-      var cellSize = 0.08; 
-  var hexGrid = turf.hexGrid(bbox, cellSize, {
+      var cellSize = 0.08; //this is in kilometers as described below. Any smaller makes the map load super slowly. Any larger and there isn't much definition in the data being displayed.
+
+      //using turf to create a hexgrid. The hexgrid will then be combined with the points within polygon to spatially join the data to hexgrid.
+      var hexGrid = turf.hexGrid(bbox, cellSize, {
         units: 'kilometers'
       });
 
+      //this section will create the points within
       hexGrid.features = hexGrid.features.map(hex => {
         hex.properties.parkingSpaces = 0;
         hex.properties.accessibilityRating = '0';
