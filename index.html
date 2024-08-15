@@ -1031,6 +1031,30 @@ function updateButtonText() {
 updateButtonText();
 
 
+// Event listener for the toggle button
+toggleButton.addEventListener('click', () => {
+  const is3D = map.getPitch() > 0;
+  if (is3D) {
+    // Switch to 2D view
+    map.easeTo({
+      pitch: 0,
+      bearing: 0,
+      duration: 500
+    });
+  } else {
+    // Switch to 3D view
+    map.easeTo({
+      pitch: 60, // Adjust pitch for 3D effect
+      bearing: 30, // Adjust bearing for 3D effect
+      duration: 500
+    });
+  }
+  // Update button text after switching views
+  updateButtonText();
+});
+    
+
+
 let currentPopup = null;
 let popupTimeout = null;
 
