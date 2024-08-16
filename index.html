@@ -411,15 +411,20 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
     map.on('load', function() {
 
       var geocoder = new MapboxGeocoder({
-        accessToken: mapboxgl.accessToken,
-        mapboxgl: mapboxgl,
-        placeholder: 'Search for an address',
-        bbox: [144.838858, -37.870314, 145.094719, -37.766712],
-        proximity: {
-          longitude: 144.956310,
-          latitude: -37.827197
-        }
-      });
+  accessToken: mapboxgl.accessToken,
+  mapboxgl: mapboxgl,
+  placeholder: 'Search for an address',
+  bbox: [144.838858, -37.870314, 145.094719, -37.766712],
+  proximity: {
+    longitude: 144.956310,
+    latitude: -37.827197
+  },
+  marker: {
+    color: '#de0f17', // Custom color for the marker
+    scale: 0.8, // Scale to increase size
+    opacity: 0.8,
+  }
+});
 
       document.getElementById('your-searchbar-container').appendChild(geocoder.onAdd(map));
 
