@@ -433,39 +433,47 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
       var bbox = turf.bbox(data);
       var cellSize = 0.08;
 
-      var hexGrid = turf.hexGrid(bbox, cellSize, {
-        units: 'kilometers'
-      });
+     var hexGrid = turf.hexGrid(bbox, cellSize, {
+  units: 'kilometers'
+});
 
-      hexGrid.features = hexGrid.features.map(hex => {
-        var pointsWithin = turf.pointsWithinPolygon(data, hex).features;
-        var parkingSpacesByRating = {
-          '0': 0,
-          '1': 0,
-          '2': 0,
-          '3': 0
-        };
+hexGrid.features = hexGrid.features.map(hex => {
+  var pointsWithin = turf.pointsWithinPolygon(data, hex).features;
+  var parkingSpacesByRating = {
+    '0': 0,
+    '1': 0,
+    '2': 0,
+    '3': 0,
+    'undefined': 0 // Add a category for undefined ratings
+  };
 
-        if (pointsWithin.length > 0) {
-          pointsWithin.forEach(point => {
-            var rating = point.properties['buildings_info_FeatureToPoin.MAX_Accessibility_rating'];
-            var spaces = point.properties['off_street_FeatureToPoin.MAX_Parking_spaces'];
-            if (rating in parkingSpacesByRating) {
-              parkingSpacesByRating[rating] += spaces;
-            }
-          });
+  if (pointsWithin.length > 0) {
+    pointsWithin.forEach(point => {
+      var rating = point.properties['buildings_info_FeatureToPoin.MAX_Accessibility_rating'];
+      var spaces = point.properties['off_street_FeatureToPoin.MAX_Parking_spaces'];
 
-          // Determine the accessibility rating with the most parking spaces
-          var maxRating = Object.keys(parkingSpacesByRating).reduce((a, b) => {
-            return parkingSpacesByRating[a] > parkingSpacesByRating[b] ? a : b;
-          });
+      // If rating is undefined, treat it as 'undefined'
+      if (!rating) {
+        rating = 'undefined';
+      }
 
-          hex.properties.parkingSpaces = Object.values(parkingSpacesByRating).reduce((a, b) => a + b, 0);
-          hex.properties.accessibilityRating = maxRating;
-        }
+      if (rating in parkingSpacesByRating) {
+        parkingSpacesByRating[rating] += spaces;
+      }
+    });
 
-        return hex;
-      }).filter(hex => hex.properties.parkingSpaces > 0);
+    // Determine the accessibility rating with the most parking spaces
+    var maxRating = Object.keys(parkingSpacesByRating).reduce((a, b) => {
+      return parkingSpacesByRating[a] > parkingSpacesByRating[b] ? a : b;
+    });
+
+    hex.properties.parkingSpaces = Object.values(parkingSpacesByRating).reduce((a, b) => a + b, 0);
+    hex.properties.accessibilityRating = maxRating;
+  }
+
+  return hex;
+}).filter(hex => hex.properties.parkingSpaces > 0);
+
 
       map.addSource('parking-data', {
         type: 'geojson',
