@@ -130,28 +130,26 @@
   font-family: "Montserrat", sans-serif;
 }
 
-/* Button styling */
+/* Adjust the button container to allow for a grid layout */
 #button {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Two columns */
+  gap: 10px; /* Space between buttons */
   background: none;
   border-radius: 3px;
   width: 100%;
   font-family: 'Varela', sans-serif;
 }
 
+/* Adjust individual button styles */
 #button a {
   font-size: 11px;
   color: #404040;
-  display: block;
-  margin: 5px;
   padding: 10px;
   text-decoration: none;
   text-align: center;
   background-color: #5e5e5e;
   border-radius: 5px;
-}
-
-#button a:last-child {
-  border: none;
 }
 
 #button a:hover {
@@ -370,9 +368,10 @@ a.legend-button.active:hover {
     <div class="divider"></div>
     <div class='public-transport'>Public Transport</div>
     <nav id="button">
-      <a href="#" class="button" id="taxi-ranks">Taxi Ranks</a>
+       <a href="#" class="button" id="taxi-ranks">Taxi Ranks</a>
       <a href="#" class="button" id="train-stations">Train Stations</a>
       <a href="#" class="button" id="bus-stops">Bus Stops</a>
+      <a href='#' class="button" id="tram-stops">Tram Stops</a>
     </nav>
     <div class="divider"></div>
     <div class="credits"> Credit: Penny Prangnell <br>
@@ -678,7 +677,7 @@ hexGrid.features = hexGrid.features.map(hex => {
         map.getCanvas().style.cursor = '';
       });
 
-      // adding the taxi ranks layer (default is off)
+  // adding the taxi ranks layer (default is off)
       map.addSource('taxi-ranks', {
         type: 'geojson',
         data: 'https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/taxi-ranks.geojson'
@@ -690,19 +689,51 @@ hexGrid.features = hexGrid.features.map(hex => {
         source: 'taxi-ranks',
         paint: {
           'circle-color': '#FFDF75', // yellow color for taxi ranks
-          'circle-radius': [
+           'circle-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            14, 3,
-            22, 10,
-          ],
-          'circle-pitch-alignment': 'map' //this aligns the circles flat on the map
-        },
-        layout: {
-          'visibility': 'none' // Start with the layer hidden
-        }
+            14, 4,
+            22, 12,
+        ],
+        'circle-stroke-width': 1, // add a 1px outline
+        'circle-stroke-color': '#000000', // black outline
+        'circle-pitch-alignment': 'map' // aligns the circles flat on the map
+    },
+    layout: {
+        'visibility': 'none' // start with the layer hidden
+    }
+});
+
+
+ // adding the tram stops layer (default is off)
+      map.addSource('tram-stops', {
+        type: 'geojson',
+        data: 'https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/PTV_METRO_TRAM_FeaturesToJSO.geojson'
       });
+
+      map.addLayer({
+        id: 'tram-stops',
+        type: 'circle',
+        source: 'tram-stops',
+        paint: {
+          'circle-color': '#90A35C',
+           'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            14, 4,
+            22, 12,
+        ],
+        'circle-stroke-width': 1, // add a 1px outline
+        'circle-stroke-color': '#000000', // black outline
+        'circle-pitch-alignment': 'map' // aligns the circles flat on the map
+    },
+    layout: {
+        'visibility': 'none' // start with the layer hidden
+    }
+});
+
 
       // add train stations layer (default is off)
       map.addSource('train-stations', {
@@ -710,25 +741,28 @@ hexGrid.features = hexGrid.features.map(hex => {
         data: 'https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/metro-train-stations-with-accessibility-information.geojson'
       });
 
-      map.addLayer({
-        id: 'train-stations',
-        type: 'circle',
-        source: 'train-stations',
-        paint: {
-          'circle-color': '#90A35C', // green colour for train stations
-          'circle-radius': [
+     map.addLayer({
+    id: 'train-stations',
+    type: 'circle',
+    source: 'train-stations',
+    paint: {
+        'circle-color': '#f2a85a', // green color for train stations
+        'circle-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            14, 3,
-            22, 10,
-          ],
-          'circle-pitch-alignment': 'map' //this aligns the circles flat on the map
-        },
-        layout: {
-          'visibility': 'none' // start with the layer hidden
-        }
-      });
+            14, 4,
+            22, 12,
+        ],
+        'circle-stroke-width': 1, // add a 1px outline
+        'circle-stroke-color': '#000000', // black outline
+        'circle-pitch-alignment': 'map' // aligns the circles flat on the map
+    },
+    layout: {
+        'visibility': 'none' // start with the layer hidden
+    }
+});
+
 
       // adding bus stops layer (default is off)
       map.addSource('bus-stops', {
@@ -742,20 +776,21 @@ hexGrid.features = hexGrid.features.map(hex => {
         source: 'bus-stops',
         paint: {
           'circle-color': '#F3819A', //
-          'circle-radius': [
+           'circle-radius': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            14, 3,
-            22, 10,
-          ],
-          'circle-pitch-alignment': 'map' //this aligns the circles flat on the map
-        },
-        layout: {
-          'visibility': 'none' // start with the layer hidden
-        }
-      });
-
+            14, 4,
+            22, 12,
+        ],
+        'circle-stroke-width': 1, // add a 1px outline
+        'circle-stroke-color': '#000000', // black outline
+        'circle-pitch-alignment': 'map' // aligns the circles flat on the map
+    },
+    layout: {
+        'visibility': 'none' // start with the layer hidden
+    }
+});
 
 
       // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
