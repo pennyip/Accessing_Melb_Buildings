@@ -1165,14 +1165,8 @@ async function getAddress(coordinates) {
     try {
         const response = await fetch(url);
         const data = await response.json();
-        
-        // Extract address components
-        const addressComponents = data.features[0]?.context || [];
-        const street = addressComponents.find(component => component.id.includes('place'))?.text || '';
-        const suburb = addressComponents.find(component => component.id.includes('locality'))?.text || '';
-        
-        // Format the address as "Street Address, Suburb"
-        return `${street}, ${suburb}`;
+        const address = data.features[0]?.place_name || 'Address not found';
+        return address;
     } catch (error) {
         console.error('Error fetching address:', error);
         return 'Address not available';
