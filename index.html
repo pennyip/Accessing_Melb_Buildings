@@ -408,6 +408,35 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
   .then(response => response.json())
   .then(data => {
     map.on('load', function() {
+    
+// Variables to store GeoJSON data for the sources
+let taxiRanksData, busStopsData, trainStationsData, tramStopsData;
+
+// Fetch and store the data for each layer: taxi ranks, bus stops, train station.
+fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/taxi-ranks.geojson')
+  .then(response => response.json())
+  .then(data => {
+    taxiRanksData = data;
+  });
+  
+fetch('https://raw.githubusercontent.com/pennyip/Accessing_Melb_Buildings/main/PTV_METRO_TRAM_FeaturesToJSO.geojson')
+  .then(response => response.json())
+  .then(data => {
+    tramStopsData = data;
+  });  
+
+fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/bus-stops.geojson')
+  .then(response => response.json())
+  .then(data => {
+    busStopsData = data;
+  });
+
+fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/metro-train-stations-with-accessibility-information.geojson')
+  .then(response => response.json())
+  .then(data => {
+    trainStationsData = data;
+  });
+    
 
       var geocoder = new MapboxGeocoder({
   accessToken: mapboxgl.accessToken,
@@ -425,6 +454,7 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
   }
 });
 
+
       document.getElementById('your-searchbar-container').appendChild(geocoder.onAdd(map));
 
       geocoder.on('result', function(e) {
@@ -437,7 +467,7 @@ fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/off
       var bbox = turf.bbox(data);
       var cellSize = 0.08;
 
-     var hexGrid = turf.hexGrid(bbox, cellSize, {
+      var hexGrid = turf.hexGrid(bbox, cellSize, {
   units: 'kilometers'
 });
 
@@ -477,7 +507,7 @@ hexGrid.features = hexGrid.features.map(hex => {
 
   return hex;
 }).filter(hex => hex.properties.parkingSpaces > 0);
-
+      
 
       map.addSource('parking-data', {
         type: 'geojson',
@@ -631,7 +661,8 @@ hexGrid.features = hexGrid.features.map(hex => {
 
         e.stopPropagation();
       });
-        
+
+
       map.on('click', function(e) {
   // clears previous highlighted points
   clearPreviousHighlights();
@@ -645,26 +676,31 @@ hexGrid.features = hexGrid.features.map(hex => {
   });
 
   // for the nearest point highlight calculations
-  var nearestTaxiRank = findNearestFeature(e.lngLat, taxiRanksData);
-  var nearestBusStop = findNearestFeature(e.lngLat, busStopsData);
-  var nearestTrainStation = findNearestFeature(e.lngLat, trainStationsData);
+  // For the nearest point highlight calculations
+var nearestTaxiRank = findNearestFeature(e.lngLat, taxiRanksData);
+var nearestBusStop = findNearestFeature(e.lngLat, busStopsData);
+var nearestTrainStation = findNearestFeature(e.lngLat, trainStationsData);
+var nearestTramStops = findNearestFeature(e.lngLat, tramStopsData);
 
-  var nearestBuildingPoint = null;
-  if (featuresBuilding.length) {
+var nearestBuildingPoint = null;
+if (featuresBuilding.length) {
     nearestBuildingPoint = featuresBuilding[0];
-  }
+}
 
-  // Clear previous highlights and add new highlights
-  clearPreviousHighlights();
-  if (nearestTaxiRank) {
-    highlightNearestPoint(nearestTaxiRank, '#FFDF75');
-  }
-  if (nearestBusStop) {
-    highlightNearestPoint(nearestBusStop, '#F3819A');
-  }
-  if (nearestTrainStation) {
-    highlightNearestPoint(nearestTrainStation, '#90A35C');
-  }
+// Clear previous highlights and add new highlights
+clearPreviousHighlights();
+if (nearestTaxiRank) {
+    highlightNearestPoint(nearestTaxiRank, '#FFDF75'); // yellow for taxi ranks
+}
+if (nearestBusStop) {
+    highlightNearestPoint(nearestBusStop, '#F3819A'); // pink for bus stops
+}
+if (nearestTrainStation) {
+    highlightNearestPoint(nearestTrainStation, '#f2a85a'); // green for train stations
+}
+if (nearestTramStops) {
+    highlightNearestPoint(nearestTramStops, '#90A35C'); // orange for tram stops
+}
 });
 
 
@@ -677,7 +713,7 @@ hexGrid.features = hexGrid.features.map(hex => {
         map.getCanvas().style.cursor = '';
       });
 
-  // adding the taxi ranks layer (default is off)
+      // adding the taxi ranks layer (default is off)
       map.addSource('taxi-ranks', {
         type: 'geojson',
         data: 'https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/taxi-ranks.geojson'
@@ -793,6 +829,7 @@ hexGrid.features = hexGrid.features.map(hex => {
 });
 
 
+
       // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
       function updateFiltersAndVisibility() {
 
@@ -874,6 +911,20 @@ hexGrid.features = hexGrid.features.map(hex => {
       }
     });
 
+ // for the tram stops button
+    document.getElementById('tram-stops').addEventListener('click', function() {
+      var visibility = map.getLayoutProperty('tram-stops', 'visibility');
+      map.setLayoutProperty('tram-stops', 'visibility', visibility === 'visible' ? 'none' : 'visible');
+
+      // toggle button colour. This will change the colours when activated to match the point colours
+      var button = document.getElementById('tram-stops');
+      if (visibility === 'visible') {
+        button.style.backgroundColor = ''; // reset to default colour
+      } else {
+        button.style.backgroundColor = '#90A35C'; // set to point colour
+      }
+    });
+
     // for the train stations button
     document.getElementById('train-stations').addEventListener('click', function() {
       var visibility = map.getLayoutProperty('train-stations', 'visibility');
@@ -882,7 +933,7 @@ hexGrid.features = hexGrid.features.map(hex => {
       if (visibility === 'visible') {
         button.style.backgroundColor = ''; // reset to default colour
       } else {
-        button.style.backgroundColor = '#90A35C'; // set to point colour
+        button.style.backgroundColor = '#f2a85a'; // set to point colour
       }
     });
 
@@ -904,27 +955,7 @@ hexGrid.features = hexGrid.features.map(hex => {
     //control button
     map.addControl(new mapboxgl.NavigationControl(), 'top-left');
   });
-// Variables to store GeoJSON data for the sources
-let taxiRanksData, busStopsData, trainStationsData;
 
-// Fetch and store the data for each layer: taxi ranks, bus stops, train station.
-fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/taxi-ranks.geojson')
-  .then(response => response.json())
-  .then(data => {
-    taxiRanksData = data;
-  });
-
-fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/bus-stops.geojson')
-  .then(response => response.json())
-  .then(data => {
-    busStopsData = data;
-  });
-
-fetch('https://raw.githubusercontent.com/pennyip/OffStreet_Parking_melb/main/metro-train-stations-with-accessibility-information.geojson')
-  .then(response => response.json())
-  .then(data => {
-    trainStationsData = data;
-  });
 
 // Function to find the nearest feature and calculate distance
 function findNearestFeature(clickedPoint, geojsonData) {
@@ -948,23 +979,27 @@ function findNearestFeature(clickedPoint, geojsonData) {
   return nearestFeature;
 }
 
-// Highlight the nearest point and include distance in the text
 function highlightNearestPoint(feature, color) {
   var id = 'highlight-' + Math.random().toString(36).substr(2, 9);
 
   // Determine the text based on the feature type
   var text = '';
-  if (feature.properties.station) {
+  if (feature.properties.type === 'tram') {
+    // Check the correct property for tram stops
+    text = feature.properties.STOP_NAME || 'Tram Stop';
+  } else if (feature.properties.station) {
     text = feature.properties.station.trim();
-
-    // Ensure the text ends with "Station"
     if (!text.toLowerCase().endsWith('station')) {
       text += ' Station';
     }
   } else if (feature.properties.loc_desc) {
-    text = feature.properties.loc_desc.trim(); // Display the 'loc_desc' property for taxi ranks
+    // Use loc_desc for taxi ranks
+    text = feature.properties.loc_desc.trim();
+  } else if (feature.properties.type === 'bus') {
+    // Use the appropriate property for bus stops, or adjust as needed
+    text = feature.properties.BUS_STOP_NAME || 'Bus Stop Location';
   } else {
-    text = 'Bus Stop'; // Default text for bus stops
+    text = 'Unknown Feature';
   }
 
   // Include distance in meters below the text
@@ -982,7 +1017,7 @@ function highlightNearestPoint(feature, color) {
     },
     paint: {
       'circle-color': color,
-      'circle-stroke-color': 'white',
+      'circle-stroke-color': 'black',
       'circle-stroke-opacity': 0.5,
       'circle-radius': [
         'interpolate',
@@ -1016,14 +1051,8 @@ function highlightNearestPoint(feature, color) {
 
   // Remove both layers when the highlight needs to disappear
   setTimeout(function() {
-    if (map.getLayer(id)) {
-      map.removeLayer(id);
-      map.removeSource(id);
-    }
-    if (map.getLayer(textId)) {
-      map.removeLayer(textId);
-      map.removeSource(textId);
-    }
+    map.removeLayer(id);
+    map.removeLayer(textId);
   }, 5000); // Adjust the timeout as needed
 }
 
@@ -1060,7 +1089,6 @@ function updateButtonText() {
 // Initialize button text based on the initial view mode
 updateButtonText();
 
-
 // Event listener for the toggle button
 toggleButton.addEventListener('click', () => {
   const is3D = map.getPitch() > 0;
@@ -1082,7 +1110,6 @@ toggleButton.addEventListener('click', () => {
   // Update button text after switching views
   updateButtonText();
 });
-    
 
 
 let currentPopup = null;
@@ -1154,6 +1181,21 @@ map.on('mouseenter', 'taxi-ranks', (e) => {
 });
 
 map.on('mouseleave', 'taxi-ranks', () => {
+    map.getCanvas().style.cursor = '';
+    if (currentPopup) {
+        currentPopup.remove();
+    }
+});
+
+// Add hover interactions for tram stops
+map.on('mouseenter', 'tram-stops', (e) => {
+    map.getCanvas().style.cursor = 'pointer';
+    const coordinates = e.features[0].geometry.coordinates.slice();
+    const description = e.features[0].properties.STOP_NAME;
+    createPopup(coordinates, `<strong>Tram Stop:</strong> ${description}`);
+});
+
+map.on('mouseleave', 'tram-stops', () => {
     map.getCanvas().style.cursor = '';
     if (currentPopup) {
         currentPopup.remove();
