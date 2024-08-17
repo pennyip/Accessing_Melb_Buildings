@@ -979,33 +979,49 @@ function findNearestFeature(clickedPoint, geojsonData) {
   return nearestFeature;
 }
 
-function highlightNearestPoint(feature, color) {
-  var id = 'highlight-' + Math.random().toString(36).substr(2, 9);
+async function highlightNearestPoint(feature, color) {
+    // Generate a unique ID for the highlight
+    var id = 'highlight-' + Math.random().toString(36).substr(2, 9);
 
-  // Determine the text based on the feature type
-  var text = '';
-  if (feature.properties.type === 'tram') {
-    // Check the correct property for tram stops
-    text = feature.properties.STOP_NAME || 'Tram Stop';
-  } else if (feature.properties.station) {
-    text = feature.properties.station.trim();
-    if (!text.toLowerCase().endsWith('station')) {
-      text += ' Station';
+    // Determine the text based on the feature type
+    var text = '';
+
+    // Handle tram stops
+    if (feature.properties.STOP_NAME) {
+        text = `Tram Stop: ${feature.properties.STOP_NAME.trim()}`;
+    } 
+    // Handle train stations
+    else if (feature.properties.station) {
+        text = `${feature.properties.station.trim()} Station`;
+    } 
+    // Handle taxi ranks
+    else if (feature.properties.loc_desc) {
+        text = `Taxi Rank: ${feature.properties.loc_desc.trim()}`;
+    } 
+    // Handle bus stops
+    else if (feature.properties.address) {
+        text = `Bus Stop: ${feature.properties.address.trim()}`;
+    } 
+    else if (feature.geometry.type === 'Point' && !feature.properties.address) {
+        // Fallback for bus stops if address is not pre-existing in properties
+        const coordinates = feature.geometry.coordinates;
+        try {
+            const address = await getAddress(coordinates);
+            text = `Bus Stop: ${address.trim()}`;
+        } catch (error) {
+            console.error('Error retrieving address:', error);
+            text = 'Bus Stop';
+        }
+    } 
+    // Default case
+    else {
+        text = 'Feature';
     }
-  } else if (feature.properties.loc_desc) {
-    // Use loc_desc for taxi ranks
-    text = feature.properties.loc_desc.trim();
-  } else if (feature.properties.type === 'bus') {
-    // Use the appropriate property for bus stops, or adjust as needed
-    text = feature.properties.BUS_STOP_NAME || 'Bus Stop Location';
-  } else {
-    text = 'Unknown Feature';
-  }
 
-  // Include distance in meters below the text
-  if (feature.properties.distance !== undefined) {
-    text += `\nDistance: ${Math.round(feature.properties.distance)} meters`;
-  }
+    // Append distance in meters if available
+    if (feature.properties.distance !== undefined) {
+        text += `\nDistance: ${Math.round(feature.properties.distance)} meters`;
+    }
 
   // Add the circle layer for highlighting
   map.addLayer({
