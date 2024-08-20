@@ -345,7 +345,6 @@ a.legend-button.active:hover {
 </style>
 </head>
 <body>
-<!-- sidebar to hold legend, buttons, and additional info -->
 <div id="sidebar">
   <div class="sidebar-content">
     <div class="sidebar-heading">Accessing Melbourne's Building</div>
@@ -359,6 +358,7 @@ a.legend-button.active:hover {
         <h5>Building Accessibility Rating</h5>
         <div id="legend-info" class="info-button">i</div>
       </div>
+      <!-- buttons to toggle building-points and hexbin layers -->
       <a href="#" class="legend-button" id="ratingnone">Undefined</a>
       <a href="#" class="legend-button" id="rating0">0 - Considered not accessible</a>
       <a href="#" class="legend-button" id="rating1">1 - Low level of accessibility</a>
@@ -368,13 +368,14 @@ a.legend-button.active:hover {
     <div class="divider"></div>
     <div class='public-transport'>Public Transport</div>
     <nav id="button">
-       <a href="#" class="button" id="taxi-ranks">Taxi Ranks</a>
+      <!-- buttons to toggle public transport layers -->
+      <a href="#" class="button" id="taxi-ranks">Taxi Ranks</a>
       <a href="#" class="button" id="train-stations">Train Stations</a>
       <a href="#" class="button" id="bus-stops">Bus Stops</a>
       <a href='#' class="button" id="tram-stops">Tram Stops</a>
     </nav>
     <div class="divider"></div>
-    <div class="credits"> Credit: Penny Prangnell <br>
+    <div class="credits"> Credit: Penny Prangnell (s4016698) <br>
       Source Data: City of Melbourne, 'Building Information', 'Off-street car parks with capacity and type', 'Taxi Ranks', 'Bus Stops' and 'Metro Train Stations with Accessibility Information', 2023.</div>
   </div>
 </div>
@@ -831,41 +832,75 @@ if (nearestTramStops) {
 
 
       // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
-      function updateFiltersAndVisibility() {
+      // Filter functions for accessibility rating
+function filterByAccessibilityRating(rating) {
+  if (rating === 'none') {
+    map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], null]);
+    map.setFilter('building-points', ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], null]);
+  } else {
+    map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], rating]);
+    map.setFilter('building-points', ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], rating]);
+  }
+}
 
-        var filters = ['any']; // container for our active rating filters
+// Array to keep track of active accessibility ratings
+let activeAccessibilityRatings = ['undefined', '0', '1', '2', '3'];
+
+// Function to update filters based on active ratings
+function updateFilters() {
+  if (activeAccessibilityRatings.length === 0) {
+    // If no ratings are active, show all hexbins and building points
+    map.setFilter('hexbin-extrusion', null);
+    map.setFilter('building-points', null);
+  } else {
+    map.setFilter('hexbin-extrusion', ['in', ['get', 'accessibilityRating'], ['literal', activeAccessibilityRatings]]);
+    map.setFilter('building-points', ['in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], ['literal', activeAccessibilityRatings]]);
+  }
+}
+
+// Function to toggle a rating filter
+function toggleAccessibilityRating(rating) {
+  const index = activeAccessibilityRatings.indexOf(rating);
+  if (index > -1) {
+    // Rating is active, so remove it
+    activeAccessibilityRatings.splice(index, 1);
+    document.getElementById(`rating${rating}`).classList.remove('active'); // Optionally update button appearance
+  } else {
+    // Rating is not active, so add it
+    activeAccessibilityRatings.push(rating);
+    document.getElementById(`rating${rating}`).classList.add('active'); // Optionally update button appearance
+  }
+  updateFilters();
+}
+
+// Add event listeners to buttons
+document.getElementById('ratingnone').addEventListener('click', function() {
+  toggleAccessibilityRating('undefined');
+});
+
+document.getElementById('rating0').addEventListener('click', function() {
+  toggleAccessibilityRating('0');
+});
+
+document.getElementById('rating1').addEventListener('click', function() {
+  toggleAccessibilityRating('1');
+});
+
+document.getElementById('rating2').addEventListener('click', function() {
+  toggleAccessibilityRating('2');
+});
+
+document.getElementById('rating3').addEventListener('click', function() {
+  toggleAccessibilityRating('3');
+});
+
+// Initialize all buttons as active
+document.querySelectorAll('.legend-button').forEach(button => {
+  button.classList.add('active'); // Optionally style as active
+});
+updateFilters();
 
 
-        // individual filters for each button so that rating matches the button
-        if (document.getElementById('ratingnone').classList.contains('active')) {
-          filters.push(['any',
-            ['!', ['has', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating']],
-            ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], null]
-          ]);
-        }
-
-        if (document.getElementById('rating0').classList.contains('active')) {
-          filters.push(['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '0']);
-        }
-        if (document.getElementById('rating1').classList.contains('active')) {
-          filters.push(['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '1']);
-        }
-        if (document.getElementById('rating2').classList.contains('active')) {
-          filters.push(['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '2']);
-        }
-        if (document.getElementById('rating3').classList.contains('active')) {
-          filters.push(['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '3']);
-        }
-
-
-        // if no ratings are active, show nothing
-        if (filters.length === 1) {
-          map.setFilter('building-points', false);
-        } else {
-          map.setFilter('building-points', filters);
-          map.setLayoutProperty('building-points', 'visibility', 'visible');
-        }
-      }
 
       // adding 'event listeners' to legend buttons to set them active by default
       ['ratingnone', 'rating0', 'rating1', 'rating2', 'rating3'].forEach(function(id, index) {
@@ -1045,6 +1080,7 @@ async function highlightNearestPoint(feature, color) {
       'circle-pitch-alignment': 'map'
     }
   });
+
 
   // Add the symbol layer for the text
   var textId = id + '-text';
