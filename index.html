@@ -1007,9 +1007,9 @@ let activeAccessibilityRatings = ['undefined', '0', '1', '2', '3'];
 // Function to update filters based on active ratings
 function updateFilters() {
   if (activeAccessibilityRatings.length === 0) {
-    // If no ratings are active, show all hexbins and building points
-    map.setFilter('hexbin-extrusion', null);
-    map.setFilter('building-points', null);
+    // If no ratings are active, hide all hexbins and building points
+    map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], 'none']);
+    map.setFilter('building-points', ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], 'none']);
   } else {
     map.setFilter('hexbin-extrusion', [
       'in',
@@ -1091,11 +1091,13 @@ document.getElementById('rating3').addEventListener('click', function() {
   toggleAccessibilityRating('3');
 });
 
-// Initialize all buttons as active
+// Initialize all buttons as active, including 'undefined'
+activeAccessibilityRatings = ['undefined', '0', '1', '2', '3'];
 document.querySelectorAll('.legend-button').forEach(button => {
   button.classList.add('active'); // Ensure buttons are initialized as active
 });
 updateFilters();
+
 
 
       updateFiltersAndVisibility();
