@@ -181,17 +181,18 @@ a.legend-button {
   padding: 10px;
   text-decoration: none;
   text-align: left;
-  background-color: #5e5e5e; /* Dark grey background for inactive */
+  background-color: #5e5e5e;
   border-radius: 5px;
   font-family: 'Varela', sans-serif;
 }
 
+/* Hover effect for inactive buttons */
 a.legend-button:hover {
-  background-color: #d3d3d3;
-  color: white; /* Keep text color white */
+  background-color: #d3d3d3; 
+  color: white; 
 }
 
-/* Specific styles for active button states */
+/* Specific colors for active buttons */
 a#ratingnone.active {
   background-color: #d3d3d3;
 }
@@ -210,6 +211,11 @@ a#rating2.active {
 
 a#rating3.active {
   background-color: #413d66;
+}
+
+a.legend-button.active:hover {
+  background-color: #c0c0c0 !important; 
+  color: white !important; 
 }
 
 .public-transport {
