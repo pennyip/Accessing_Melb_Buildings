@@ -354,6 +354,53 @@ a.legend-button.active:hover {
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
   padding: 5px;
 }
+
+.offstreet-heading {
+  font-family: 'Varela', sans-serif;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+#parking-bars {
+  display: flex;
+  justify-content: space-around;
+  align-items: flex-end;
+  margin: 10px 0;
+}
+
+.bar-button {
+  background-color: #656565;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin: 0 2px;
+  outline: none;
+  padding: 0;
+}
+
+.bar-button:hover {
+  background-color: #242424;
+}
+
+.bar-button:active {
+  background-color: #d6d6d6 !important;
+}
+
+.bar-button.active {
+  background-color: #d6d6d6;
+}
+
+.bar-button.active:hover {
+  background-color: #242424;
+}
+
+.bar-text {
+  margin-top: 4px;
+  font-size: 9px;
+  color: #656565;
+   font-family: "Montserrat", sans-serif;
+}
+        
 </style>
 </head>
 <body>
@@ -388,6 +435,33 @@ a.legend-button.active:hover {
       <a href='#' class="button" id="tram-stops">Tram Stops</a>
     </nav>
     <div class="divider"></div>
+      <div class="offstreet-heading">Number of Off-Street Car Spaces</div>
+<div id="parking-bars">
+  <div class="bar-container">
+    <button id="barbutton1" class="bar-button active" style="height: 10px; width: 15px;" data-min="0" data-max="100"></button>
+    <span class="bar-text">&lt;100</span>
+  </div>
+  <div class="bar-container">
+    <button id="barbutton2" class="bar-button active" style="height: 20px; width: 15px;" data-min="101" data-max="200"></button>
+    <span class="bar-text">&lt;200</span>
+  </div>
+  <div class="bar-container">
+    <button id="barbutton3" class="bar-button active" style="height: 30px; width: 15px;" data-min="201" data-max="500"></button>
+    <span class="bar-text">&lt;500</span>
+  </div>
+  <div class="bar-container">
+    <button id="barbutton4" class="bar-button active" style="height: 40px; width: 15px;" data-min="501" data-max="1000"></button>
+    <span class="bar-text">&lt;1000</span>
+  </div>
+  <div class="bar-container">
+    <button id="barbutton5" class="bar-button active" style="height: 50px; width: 15px;" data-min="1001" data-max="3000"></button>
+    <span class="bar-text">&lt;3000</span>
+  </div>
+  <div class="bar-container">
+    <button id="barbutton6" class="bar-button active" style="height: 60px; width: 15px;" data-min="3001" data-max="6000"></button>
+    <span class="bar-text"> &lt;6000</span>
+  </div>
+</div>
     <div class="credits"> Credit: Penny Prangnell (s4016698) <br>
       Source Data: City of Melbourne, 'Building Information', 'Off-street car parks with capacity and type', 'Taxi Ranks', 'Bus Stops' and 'Metro Train Stations with Accessibility Information', 2023.</div>
   </div>
@@ -581,6 +655,68 @@ hexGrid.features = hexGrid.features.map(hex => {
         }
       });
 
+// Object to keep track of visibility states by button ID
+const visibilityStates = {
+  'barbutton1': true,
+  'barbutton2': true,
+  'barbutton3': true,
+  'barbutton4': true,
+  'barbutton5': true,
+  'barbutton6': true
+};
+
+document.querySelectorAll('.bar-button').forEach(button => {
+  button.addEventListener('click', function() {
+    const buttonId = this.id;
+    const min = parseInt(this.getAttribute('data-min'), 10);
+    const max = parseInt(this.getAttribute('data-max'), 10);
+    
+    // Toggle the button's active state
+    if (this.classList.contains('active')) {
+      // Turn off visibility for this range
+      this.classList.remove('active');
+      visibilityStates[buttonId] = false;
+    } else {
+      // Turn on visibility for this range
+      this.classList.add('active');
+      visibilityStates[buttonId] = true;
+    }
+    
+    // Apply the combined filter
+    applyFilters();
+  });
+});
+
+function applyFilters() {
+  const filters = ['any'];
+  
+  // Add filters for all visible ranges
+  Object.keys(visibilityStates).forEach(buttonId => {
+    if (visibilityStates[buttonId]) {
+      const min = parseInt(document.getElementById(buttonId).getAttribute('data-min'), 10);
+      const max = parseInt(document.getElementById(buttonId).getAttribute('data-max'), 10);
+      filters.push([
+        'all',
+        ['>=', ['get', 'parkingSpaces'], min],
+        ['<=', ['get', 'parkingSpaces'], max]
+      ]);
+    }
+  });
+  
+  // If no filters are active, show all hexbins
+  if (filters.length === 1) {
+    map.setFilter('hexbin-extrusion', null);
+  } else {
+    map.setFilter('hexbin-extrusion', filters);
+  }
+}
+
+// Initialize all buttons as active and apply initial filters
+document.querySelectorAll('.bar-button').forEach(button => {
+  button.classList.add('active');
+});
+
+        
       map.on('click', 'hexbin-extrusion', function(e) {
         var features = e.features;
         if (!features || features.length === 0) {
