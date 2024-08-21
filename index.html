@@ -832,13 +832,19 @@ if (nearestTramStops) {
 
 
 
-      // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
+ // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
       // Filter functions for accessibility rating
 function filterByAccessibilityRating(rating) {
   if (rating === 'undefined') {
-    // Filter for the 'undefined' rating
-    map.setFilter('hexbin-extrusion', ['!in', ['get', 'accessibilityRating'], '0', '1', '2', '3', 'undefined']);
-    map.setFilter('building-points', ['!in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '0', '1', '2', '3', 'undefined']);
+    // Filter hexbins for ratings not in '0', '1', '2', or '3'
+    map.setFilter('hexbin-extrusion', ['!in', ['get', 'accessibilityRating'], '0', '1', '2', '3']);
+
+    // Filter building points for null values (considered 'undefined')
+    map.setFilter('building-points', [
+      'any',
+      ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], null],
+      ['!in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '0', '1', '2', '3']
+    ]);
   } else {
     // Filter for specific ratings
     map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], rating]);
@@ -856,8 +862,26 @@ function updateFilters() {
     map.setFilter('hexbin-extrusion', null);
     map.setFilter('building-points', null);
   } else {
-    map.setFilter('hexbin-extrusion', ['in', ['get', 'accessibilityRating'], ['literal', activeAccessibilityRatings]]);
-    map.setFilter('building-points', ['in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], ['literal', activeAccessibilityRatings]]);
+    map.setFilter('hexbin-extrusion', [
+      'in',
+      ['get', 'accessibilityRating'],
+      ['literal', activeAccessibilityRatings]
+    ]);
+
+    // Include null values for 'ratingnone'
+    if (activeAccessibilityRatings.includes('undefined')) {
+      map.setFilter('building-points', [
+        'any',
+        ['in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], ['literal', activeAccessibilityRatings]],
+        ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], null]
+      ]);
+    } else {
+      map.setFilter('building-points', [
+        'in',
+        ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'],
+        ['literal', activeAccessibilityRatings]
+      ]);
+    }
   }
 }
 
@@ -929,8 +953,10 @@ updateFilters();
     }
   });
 });
+
       updateFiltersAndVisibility();
     });
+
 
     // for the taxi ranks button
     document.getElementById('taxi-ranks').addEventListener('click', function() {
