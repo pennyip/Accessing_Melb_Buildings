@@ -835,10 +835,12 @@ if (nearestTramStops) {
       // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
       // Filter functions for accessibility rating
 function filterByAccessibilityRating(rating) {
-  if (rating === 'none') {
-    map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], null]);
-    map.setFilter('building-points', ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], null]);
+  if (rating === 'undefined') {
+    // Filter for the 'undefined' rating
+    map.setFilter('hexbin-extrusion', ['!in', ['get', 'accessibilityRating'], '0', '1', '2', '3', 'undefined']);
+    map.setFilter('building-points', ['!in', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], '0', '1', '2', '3', 'undefined']);
   } else {
+    // Filter for specific ratings
     map.setFilter('hexbin-extrusion', ['==', ['get', 'accessibilityRating'], rating]);
     map.setFilter('building-points', ['==', ['get', 'buildings_info_FeatureToPoin.MAX_Accessibility_rating'], rating]);
   }
@@ -901,35 +903,32 @@ document.querySelectorAll('.legend-button').forEach(button => {
 });
 updateFilters();
 
+// Add event listeners to legend buttons to set them active by default
+['ratingnone', 'rating0', 'rating1', 'rating2', 'rating3'].forEach(function(id, index) {
+  var button = document.getElementById(id);
+  button.classList.add('active');
 
+  // Set button color to match the legend color
+  if (id === 'ratingnone') {
+    button.style.backgroundColor = '#d3d3d3'; // Color for ratingnone button
+  } else {
+    button.style.backgroundColor = circleColors[index - 1];
+  }
 
-      // adding 'event listeners' to legend buttons to set them active by default
-      ['ratingnone', 'rating0', 'rating1', 'rating2', 'rating3'].forEach(function(id, index) {
-        var button = document.getElementById(id);
-        button.classList.add('active');
-
-        // set button colour to match the legend color
-        if (id === 'ratingnone') {
-          button.style.backgroundColor = '#d3d3d3'; // colour for ratingnone button
-        } else {
-          button.style.backgroundColor = circleColors[index - 1];
-        }
-
-        button.addEventListener('click', function() {
-          this.classList.toggle('active');
-          updateFiltersAndVisibility();
-          if (this.classList.contains('active')) {
-            if (id === 'ratingnone') {
-              this.style.backgroundColor = '#d3d3d3'; // colour for ratingnone button
-            } else {
-              this.style.backgroundColor = circleColors[index - 1]; // Set color based on circleColors array
-            }
-          } else {
-            this.style.backgroundColor = '';
-          }
-        });
-      });
-
+  button.addEventListener('click', function() {
+    this.classList.toggle('active');
+    updateFilters();
+    if (this.classList.contains('active')) {
+      if (id === 'ratingnone') {
+        this.style.backgroundColor = '#d3d3d3'; // Color for ratingnone button
+      } else {
+        this.style.backgroundColor = circleColors[index - 1]; // Set color based on circleColors array
+      }
+    } else {
+      this.style.backgroundColor = '';
+    }
+  });
+});
       updateFiltersAndVisibility();
     });
 
