@@ -175,35 +175,41 @@
 
 a.legend-button {
   font-size: 11px;
-  color: #404040;
+  color: white; /* White text color */
   display: block;
   margin: 5px;
   padding: 10px;
   text-decoration: none;
   text-align: left;
-  background-color: #5e5e5e;
+  background-color: #5e5e5e; /* Dark grey background for inactive */
   border-radius: 5px;
   font-family: 'Varela', sans-serif;
 }
 
-a.legend-button:last-child {
-  border: none;
-}
-
 a.legend-button:hover {
-  background-color: #f8f8f8;
-  color: #404040;
+  background-color: #d3d3d3;
+  color: white; /* Keep text color white */
 }
 
-a.legend-button.active {
-  background-color: #894b77;
-  color: white;
-  font-weight: normal;
+/* Specific styles for active button states */
+a#ratingnone.active {
+  background-color: #d3d3d3;
 }
 
-a.legend-button.active:hover {
-  background-color: #f8f8f8;
-  color: #404040;
+a#rating0.active {
+  background-color: #a8eec7;
+}
+
+a#rating1.active {
+  background-color: #6dbab9;
+}
+
+a#rating2.active {
+  background-color: #5481a0;
+}
+
+a#rating3.active {
+  background-color: #413d66;
 }
 
 .public-transport {
@@ -832,7 +838,7 @@ if (nearestTramStops) {
 
 
 
- // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
+      // this function will toggle the legend buttons on and off based on the accessibility rating which was defined earlier.
       // Filter functions for accessibility rating
 function filterByAccessibilityRating(rating) {
   if (rating === 'undefined') {
@@ -883,6 +889,7 @@ function updateFilters() {
       ]);
     }
   }
+  updateButtonStates();
 }
 
 // Function to toggle a rating filter
@@ -891,13 +898,33 @@ function toggleAccessibilityRating(rating) {
   if (index > -1) {
     // Rating is active, so remove it
     activeAccessibilityRatings.splice(index, 1);
-    document.getElementById(`rating${rating}`).classList.remove('active'); // Optionally update button appearance
   } else {
     // Rating is not active, so add it
     activeAccessibilityRatings.push(rating);
-    document.getElementById(`rating${rating}`).classList.add('active'); // Optionally update button appearance
   }
   updateFilters();
+}
+
+// Function to update button states based on active ratings
+function updateButtonStates() {
+  ['ratingnone', 'rating0', 'rating1', 'rating2', 'rating3'].forEach(function(id) {
+    const button = document.getElementById(id);
+    if (id === 'ratingnone') {
+      // 'ratingnone' should be active if 'undefined' is in the array
+      if (activeAccessibilityRatings.includes('undefined')) {
+        button.classList.add('active');
+      } else {
+        button.classList.remove('active');
+      }
+    } else {
+      // Handle other ratings
+      if (activeAccessibilityRatings.includes(id.replace('rating', ''))) {
+        button.classList.add('active');
+      } else {
+        button.classList.remove('active');
+      }
+    }
+  });
 }
 
 // Add event listeners to buttons
@@ -923,39 +950,14 @@ document.getElementById('rating3').addEventListener('click', function() {
 
 // Initialize all buttons as active
 document.querySelectorAll('.legend-button').forEach(button => {
-  button.classList.add('active'); // Optionally style as active
+  button.classList.add('active'); // Ensure buttons are initialized as active
 });
 updateFilters();
 
-// Add event listeners to legend buttons to set them active by default
-['ratingnone', 'rating0', 'rating1', 'rating2', 'rating3'].forEach(function(id, index) {
-  var button = document.getElementById(id);
-  button.classList.add('active');
-
-  // Set button color to match the legend color
-  if (id === 'ratingnone') {
-    button.style.backgroundColor = '#d3d3d3'; // Color for ratingnone button
-  } else {
-    button.style.backgroundColor = circleColors[index - 1];
-  }
-
-  button.addEventListener('click', function() {
-    this.classList.toggle('active');
-    updateFilters();
-    if (this.classList.contains('active')) {
-      if (id === 'ratingnone') {
-        this.style.backgroundColor = '#d3d3d3'; // Color for ratingnone button
-      } else {
-        this.style.backgroundColor = circleColors[index - 1]; // Set color based on circleColors array
-      }
-    } else {
-      this.style.backgroundColor = '';
-    }
-  });
-});
 
       updateFiltersAndVisibility();
     });
+    
 
 
     // for the taxi ranks button
